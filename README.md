@@ -1,0 +1,1 @@
+You need to install GTK3-Runtime Win64 for this script to work
