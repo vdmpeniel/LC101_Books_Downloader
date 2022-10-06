@@ -2,6 +2,7 @@ import http.client
 import requests
 import time
 from bs4 import BeautifulSoup
+import base64
 
 import os
 
@@ -60,9 +61,9 @@ def correct_url(url):
     return url
 
 
-def fetch_test(url):
+def fetch_test(url, is_byte=False):
     response = requests.get(url)
-    return response.text
+    return response.content if is_byte else response.text
 
 
 def get_header(title):
@@ -102,12 +103,15 @@ def get_header(title):
                 margin: 0 10px;
             }    
         </style>
-        <body>""".replace('{title}', title)
+        <body>
+            <div class='book'>
+        """.replace('{title}', title)
 
 
 def get_footer():
     return """    
-    <p> LC101 April 2022 <p>'
+        <p> LC101 April 2022 <p>'
+        </div>
     </body></html>
     """
 
@@ -116,7 +120,7 @@ def parse_dom(html):
     return BeautifulSoup(html, 'html.parser')
 
 
-def process_url(url):
+def get_dom_from_url(url):
     try:
         html_code = fetch_test(url)
         dom = parse_dom(html_code)
@@ -136,8 +140,46 @@ is_first_time = True
 full_content = ''
 
 
-def load_images(dom, content):
-    return content
+def load_images(dom):
+    images = dom.findAll('img')
+    # print(len(images))
+
+    for image in images:
+        if image.get('width') is not None:
+            image['width'] = None
+            image['height'] = None
+
+        original_source = image.get('src')
+        if 'lc-ed-logo.png' in original_source:
+            source = 'http://stpeteedc.com/wp-content/uploads/2018/08/launchcode-01.png'
+            image['style'] = 'display: block; max-width:30%; height:auto; display: -webkit-box; margin: 0 0 0 auto;'
+        else:
+            source = url_path.split("chapters")[0] + original_source.replace('../', '')
+            image['style'] = 'display: block; max-width:100%; height:auto; margin-left: auto; margin-right: auto;'
+
+        image_content = fetch_test(source, True)
+        encoded_image = base64.b64encode(image_content)
+        extension = original_source.replace('../', '').split('.')[1]
+        encoded_source = f'data:image/{extension};base64,' + encoded_image.decode('utf-8')
+
+        image['src'] = encoded_source
+    # print(content)
+    return dom
+
+
+def clean_dom(dom):
+    dom.find('form').decompose()
+    dom.find('p', {'class': 'pull-right'}).decompose()
+    return dom
+
+
+def add_content_from_url(url):
+    global full_content
+    dom = get_dom_from_url(url)
+    dom = clean_dom(dom)
+    dom = load_images(dom)
+    full_content += '' if dom is None else dom.find('body').decode_contents()
+    return dom
 
 
 def scrap(index, first, last):
@@ -147,8 +189,7 @@ def scrap(index, first, last):
 
     if is_first_time:
         is_first_time = False
-        dom = process_url(index)
-        full_content += dom.find('body').decode_contents()
+        add_content_from_url(index)
 
     url = first
     step_counter = 0
@@ -158,12 +199,9 @@ def scrap(index, first, last):
         url = correct_url(url)
         print(f'Step: {step_counter} : {url}')
 
-        dom = process_url(url)
-        content = dom.find('body').decode_contents()
-        content = load_images(dom, content)
-        full_content += '' if dom is None else content
+        dom = add_content_from_url(url)
 
-        if step_counter >= 2000 or url == last or url == '':
+        if step_counter >= 10 or url == last or url == '':
             if url == '':
                 print('There was an error in the last step processed.')
             else:
@@ -203,7 +241,7 @@ def saveIntroBook():
     # scrap(index, first, last)
 
     full_content += get_footer()
-    # print(full_content)
+    print(full_content)
     save_as_pdf(full_content, title)
 
 
