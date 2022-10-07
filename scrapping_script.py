@@ -32,29 +32,33 @@ def correct_url(url):
         return ''
     url = url.replace(' ', '')
 
-    if url in ['stash.html', 'tidy-repos.html']:
-        url = 'git/' + url
+    # if url in ['stash.html', 'tidy-repos.html']:
+    #     url = 'git/' + url
 
-    if 'https://' not in url and 'index.html' in url and '/' in url:
+    if 'https://' in url:
+        url_path = url[:url.rfind('/') + 1]
+        return url
+    elif '../' in url:
+        url = url.replace('../', '')
+        if '/' in url:
+            url_path = url_path[:url_path[:len(url_path) - 1].rfind('/') + 1] + url.split('/')[0] + '/'
+            url = url.split('/')[1]
+        else:
+            url_path = url_path[:len(url_path) - 1]
+            url_path = url_path[:url_path.rfind('/') + 1]
+
+    elif 'https://' not in url and '/' in url:
         if '../' in url:
             url = url.replace('../', '')
             url_path = url_path[:len(url_path) - 1]
             url_path = url_path[:url_path.rfind('/') + 1]
 
-        url_path = url_path + url.split('/')[0] + '/'
-        url = url.split('/')[1]
-
-    elif 'https://' in url:
-        url_path = url[:url.rfind('/') + 1]
-        return url
-    elif '../' in url:
-        url = url.replace('../', '')
-        if 'feedback.html' in url:
-            url_path = url_path[:len(url_path) - 1]
-            url_path = url_path[:url_path.rfind('/') + 1]
-        elif '/' in url:
-            url_path = url_path[:url_path[:len(url_path) - 1].rfind('/') + 1] + url.split('/')[0] + '/'
+        if '/' in url:
+            url_path = url_path + url.split('/')[0] + '/'
             url = url.split('/')[1]
+
+
+
 
     url = url_path + url
 
@@ -145,11 +149,14 @@ def load_images(dom):
     # print(len(images))
 
     for image in images:
+        original_source = image.get('src')
+        if '.' not in original_source:
+            continue
+
         if image.get('width') is not None:
             image['width'] = None
             image['height'] = None
 
-        original_source = image.get('src')
         if 'lc-ed-logo.png' in original_source:
             source = 'http://stpeteedc.com/wp-content/uploads/2018/08/launchcode-01.png'
             image['style'] = 'display: block; max-width:30%; height:auto; display: -webkit-box; margin: 0 0 0 auto;'
@@ -168,8 +175,13 @@ def load_images(dom):
 
 
 def clean_dom(dom):
-    dom.find('form').decompose()
-    dom.find('p', {'class': 'pull-right'}).decompose()
+    all_forms = dom.findAll('form')
+    for form in all_forms:
+        form.decompose()
+
+    all_ps = dom.findAll('p', {'class': 'pull-right'})
+    for p in all_ps:
+        p.decompose()
     return dom
 
 
@@ -201,7 +213,7 @@ def scrap(index, first, last):
 
         dom = add_content_from_url(url)
 
-        if step_counter >= 10 or url == last or url == '':
+        if step_counter >= 1000 or url == last or url == '':
             if url == '':
                 print('There was an error in the last step processed.')
             else:
@@ -215,43 +227,70 @@ def scrap(index, first, last):
     print("Finished scrapping document.")
 
 
-def saveIntroBook():
+def init():
+    global is_first_time
+    global url_path
+    is_first_time = True
+    url_path = ''
+
+
+def save_intro_book():
     global full_content
+    init()
+    
     title = 'Introduction to Professional Web Development in JavaScript'
     full_content = get_header(title)
 
+    print('\n\n' + title)
     index = 'https://education.launchcode.org/intro-to-professional-web-dev/index.html'
     first = 'https://education.launchcode.org/intro-to-professional-web-dev/chapters/introduction/index.html'
     last = 'https://education.launchcode.org/intro-to-professional-web-dev/chapters/booster-rockets/brainbreak.html'
     scrap(index, first, last)
 
-    # Intro-TextBook-Studios
-    # first = 'https://education.launchcode.org/intro-to-professional-web-dev/chapters/data-and-variables/studio.html'
-    # last = 'https://education.launchcode.org/intro-to-professional-web-dev/chapters/angular-lsn3/studio.html'
-    # scrap(index, first, last)
-    #
-    # # Intro-TextBook-Assignments
-    # first = 'https://education.launchcode.org/intro-to-professional-web-dev/assignments/candidateQuiz.html'
-    # last = 'https://education.launchcode.org/intro-to-professional-web-dev/assignments/orbit-report/orbit-report.html'
-    # scrap(index, first, last)
-    #
-    # # Intro-TextBook-Appendices
-    # first = 'https://education.launchcode.org/intro-to-professional-web-dev/appendices/about-this-book.html'
-    # last = 'https://education.launchcode.org/intro-to-professional-web-dev/appendices/feedback.html'
-    # scrap(index, first, last)
+    print('\n\nIntro-TextBook-Assignments')
+    first = 'https://education.launchcode.org/intro-to-professional-web-dev/assignments/candidateQuiz.html'
+    last = 'https://education.launchcode.org/intro-to-professional-web-dev/assignments/orbit-report/orbit-report.html'
+    scrap(index, first, last)
+
+    print('\n\nIntro-TextBook-Appendices')
+    first = 'https://education.launchcode.org/intro-to-professional-web-dev/appendices/about-this-book.html'
+    last = 'https://education.launchcode.org/intro-to-professional-web-dev/appendices/feedback.html'
+    scrap(index, first, last)
 
     full_content += get_footer()
-    print(full_content)
     save_as_pdf(full_content, title)
 
 
-def saveJavaBook():
-    pass
+def save_java_book():
+    global full_content
+    init()
+
+    title = 'Java Web Development'
+    full_content = get_header(title)
+
+    print('\n\n' + title)
+    index = 'https://education.launchcode.org/java-web-development/index.html'
+    first = 'https://education.launchcode.org/java-web-development/chapters/introduction-and-setup/index.html'
+    last = 'https://education.launchcode.org/java-web-development/chapters/auth/index.html'
+    scrap(index, first, last)
+
+    print('\n\nJava Assignments')
+    first = 'https://education.launchcode.org/java-web-development/assignments/hello-world.html'
+    last = 'https://education.launchcode.org/java-web-development/assignments/tech-jobs-persistent.html'
+    scrap(index, first, last)
+
+    print('\n\nJava Appendices')
+    first = 'https://education.launchcode.org/java-web-development/appendices/about-this-book.html'
+    last = 'https://education.launchcode.org/java-web-development/appendices/exercise-solutions/orm-relationships.html'
+    scrap(index, first, last)
+
+    full_content += get_footer()
+    save_as_pdf(full_content, title)
 
 
 def main():
-    saveIntroBook()
-    saveJavaBook()
+    save_intro_book()
+    save_java_book()
     print('Enjoy!')
 
 
