@@ -7,7 +7,7 @@ import base64
 import os
 
 os.add_dll_directory(r"C:\Program Files\GTK3-Runtime Win64\bin")
-from weasyprint import HTML
+from weasyprint import HTML, CSS
 
 
 def fetch_old(url):
@@ -32,9 +32,6 @@ def correct_url(url):
         return ''
     url = url.replace(' ', '')
 
-    # if url in ['stash.html', 'tidy-repos.html']:
-    #     url = 'git/' + url
-
     if 'https://' in url:
         url_path = url[:url.rfind('/') + 1]
         return url
@@ -57,9 +54,6 @@ def correct_url(url):
             url_path = url_path + url.split('/')[0] + '/'
             url = url.split('/')[1]
 
-
-
-
     url = url_path + url
 
     return url
@@ -76,45 +70,176 @@ def get_header(title):
         <head>
             <title>{title}</title>
         </head>
-        <style type=\"text/css\" media=\"screen\">
+        <body>
+            <div class='book'>
+        """.replace('{title}', title)
+
+
+def get_css():
+    return """
             body {
-                background-color: #f1f1f1;
-                margin: 0;
+                width: 100%;
+                background-color: rgba(255, 255, 255, 0);                
                 font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                text-align: left !important;
             }
-            .container { margin: 50px auto 40px auto; width: 600px; text-align: center; }
-    
+            
+            .container { 
+                margin: 50px auto 40px auto; 
+                width: 600px; 
+                text-align: center; 
+            }    
             a { color: #4183c4; text-decoration: none; }
             a:hover { text-decoration: underline; }
     
-            h1 { width: 800px; position:relative; left: -100px; letter-spacing: -1px; line-height: 60px; font-size: 60px; font-weight: 100; margin: 0px 0 50px 0; text-shadow: 0 1px 0 #fff; }
-            p { color: rgba(0, 0, 0, 0.5); margin: 20px 0; line-height: 1.6; }
+            h1 { 
+                width: 90%; 
+                text-align: center !important; 
+                letter-spacing: -1px; 
+                line-height: 1.7em; 
+                font-size: 1.8em; 
+                font-weight: bold; 
+                margin: 200px 0 40px 0 !important; 
+                text-shadow: 0 1px 0 #fff; 
+            }
             
-            ul { list-style: none; margin: 25px 0; padding: 0; }
-            li { display: table-cell; font-weight: bold; width: 1%; }
+            h2 { 
+                width: 90%; 
+                text-align: left !important; 
+                letter-spacing: -1px; 
+                line-height: 15px; 
+                font-size: 1.5em; 
+                font-weight: 100; 
+                margin: 80px 0 20px 0; 
+                text-shadow: 0 1px 0 #fff; 
+            }
             
-            .logo { display: inline-block; margin-top: 35px; }
+            p {
+                text-align: left;                  
+                margin: 20px 0; 
+                line-height: 1.6; 
+                font-size: 1em; 
+                color: #909090;
+            }
+            
+            ul { 
+                list-style: none; 
+                margin: 5px 0; 
+                padding: 0; 
+                line-height: 1.3em;
+            }
+            
+            ol { 
+                margin: 5px 0; 
+                padding: 0; 
+                line-height: 1.3em;
+            }    
+                                
+            div.toctree-wrapper ol{ list-style: none; } 
+            
+            li { 
+                text-align: left; 
+                font-weight: bold;                 
+            }  
+            
+            ol.arabic li {                  
+                margin: 15px 0 0 40px;
+            }  
+                     
+            .logo { display: inline-block; margin-top: 10px; }
             .logo-img-2x { display: none; }
           
             #suggestions {
                 margin-top: 35px;
                 color: #ccc;
             }
+            
             #suggestions a {
                 color: #666666;
                 font-weight: 200;
                 font-size: 14px;
                 margin: 0 10px;
             }    
-        </style>
-        <body>
-            <div class='book'>
-        """.replace('{title}', title)
+            
+            a::after {
+                content: " (" attr(alt) ") ";
+            }
+            
+            pre {
+                white-space: pre-wrap;
+            }
+            
+            img{
+                z-index: 1000 !important;
+                filter: contrast(120%);
+                filter: contrast(120%);
+            }
+            img[src~="png"]{                
+            }
+            
+            @page {
+                padding: 0px 0px !important;
+                margin: 50px 10px 20px 10px !important;
+                size: Letter;
+                @top-right {
+                    content: 'launch_code';
+                    display: block;
+                    position: absolute;
+                    top: 20px;
+                    right: 10px;
+                    margin: 10px 10px;
+                    color: #505633;
+                }
+                @bottom-right {
+                    content: counter(page);
+                    position: absolute !important;
+                    right: 100px !important;
+                    bottom: 50px !important;
+                    font-size: 0.6em !important;
+                    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                }
+            }
+            
+            @page :first {
+                @top-right {
+                    content: "";
+                }
+            }
+            
+            tr:nth-child(odd){
+                background: #fffff1;
+            }
+            
+            #java-naming-conventions table.docutils {
+                display: table;
+                width: 100% !important;
+                border-collapse: collapse;                
+                border-style: none;
+                border-width: 20px;
+                border: none;                
+                font-size: 0.9;                
+                text-align: start;                
+                border-color: transparent; 
+            }
+            
+            #java-naming-conventions table.docutils th, 
+            #java-naming-conventions table.docutils td{
+                padding: 20px 30px !important;
+                
+            }
+            #java-naming-conventions table.docutils td{                
+                overflow: hidden; 
+                width: 33.3% !important; 
+            }            
+            .last-copy-right{
+                text-align: center;
+            }
+    """
 
 
 def get_footer():
     return """    
-        <p> LC101 April 2022 <p>'
+        <p class='last-copy-right'> LC101 April 2022 <p>'
         </div>
     </body></html>
     """
@@ -124,20 +249,31 @@ def parse_dom(html):
     return BeautifulSoup(html, 'html.parser')
 
 
-def get_dom_from_url(url):
+def get_dom_from_html(html_code):
     try:
-        html_code = fetch_test(url)
         dom = parse_dom(html_code)
         return dom
     except:
         return None
 
 
+def save(title, extension, data):
+    if extension == 'pdf':
+        open(f'downloads/{title}.{extension}', 'wb').write(data)
+    else:
+        open(f'downloads/{title}.{extension}', 'w', encoding="utf-8").write(data)
+    print(f'PDF file: {title}.{extension} was saved.')
+
+
+def save_as_html(html, title):
+    save(title, 'html', html)
+
+
 def save_as_pdf(html, title):
     print('Saving PDF (Sorry this is slow)...')
-    pdf = HTML(string=html).write_pdf()
-    open(title + '.pdf', 'wb').write(pdf)
-    print(f'PDF file: {title}.pdf was saved.')
+    css = CSS(string=get_css())
+    pdf = HTML(string=html).write_pdf(stylesheets=[css])
+    save(title, 'pdf', pdf)
 
 
 is_first_time = True
@@ -158,8 +294,8 @@ def load_images(dom):
             image['height'] = None
 
         if 'lc-ed-logo.png' in original_source:
-            source = 'http://stpeteedc.com/wp-content/uploads/2018/08/launchcode-01.png'
-            image['style'] = 'display: block; max-width:30%; height:auto; display: -webkit-box; margin: 0 0 0 auto;'
+            image.decompose()
+            continue
         else:
             source = url_path.split("chapters")[0] + original_source.replace('../', '')
             image['style'] = 'display: block; max-width:100%; height:auto; margin-left: auto; margin-right: auto;'
@@ -174,21 +310,31 @@ def load_images(dom):
     return dom
 
 
-def clean_dom(dom):
-    all_forms = dom.findAll('form')
-    for form in all_forms:
-        form.decompose()
+def clean_content():
+    global full_content
+    dom = get_dom_from_html(full_content)
 
-    all_ps = dom.findAll('p', {'class': 'pull-right'})
-    for p in all_ps:
-        p.decompose()
-    return dom
+    tag_types_to_decompose = [
+        dom.findAll('form'),
+        dom.findAll('p', {'class': 'pull-right'}),
+        dom.findAll('a', {'class': 'navbar-brand'}),
+        dom.findAll('li', {'class': 'previous'}),
+        dom.findAll('li', {'class': 'next'}),
+        dom.findAll('button', {'class': 'navbar-toggle'}),
+        dom.findAll('a', {'class': 'headerlink'}),
+        dom.findAll('a', {'class': 'pagination-sm'}),
+        dom.findAll('nav', {'id': 'toc-toggle'})
+    ]
+    for tag_list in tag_types_to_decompose:
+        for tag in tag_list:
+            tag.decompose()
+
+    full_content = dom.decode_contents()
 
 
 def add_content_from_url(url):
     global full_content
-    dom = get_dom_from_url(url)
-    dom = clean_dom(dom)
+    dom = get_dom_from_html(fetch_test(url))
     dom = load_images(dom)
     full_content += '' if dom is None else dom.find('body').decode_contents()
     return dom
@@ -258,6 +404,8 @@ def save_intro_book():
     scrap(index, first, last)
 
     full_content += get_footer()
+    clean_content()
+    save_as_html(full_content, title)
     save_as_pdf(full_content, title)
 
 
@@ -285,6 +433,8 @@ def save_java_book():
     scrap(index, first, last)
 
     full_content += get_footer()
+    clean_content()
+    save_as_html(full_content, title)
     save_as_pdf(full_content, title)
 
 
@@ -295,4 +445,6 @@ def main():
 
 
 if __name__ == '__main__':
+    start_time = time.time()
     main()
+    print("--- Execution time: %s seconds ---" % (time.time() - start_time))
