@@ -6,9 +6,7 @@ import base64
 import PyPDF2
 import pyttsx3
 from gtts import gTTS
-
 import os
-
 os.add_dll_directory(r"C:\Program Files\GTK3-Runtime Win64\bin")
 from weasyprint import HTML, CSS
 
@@ -58,7 +56,6 @@ def correct_url(url):
             url = url.split('/')[1]
 
     url = url_path + url
-
     return url
 
 
@@ -81,10 +78,11 @@ def get_header(title):
 def get_css():
     return """
             body {
-                width: 100%;
+                width: 90%;
                 background-color: rgba(255, 255, 255, 0);                
                 font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
                 text-align: left !important;
+                margin: 0px auto 0px auto !important;
             }
             
             .container { 
@@ -118,7 +116,7 @@ def get_css():
             }
             
             p {
-                text-align: left;                  
+                text-align: justify !important;                  
                 margin: 20px 0; 
                 line-height: 1.6; 
                 font-size: 1em; 
@@ -181,8 +179,8 @@ def get_css():
             }
             
             @page {
-                padding: 0px 0px !important;
-                margin: 50px 20px 20px 20px !important;
+                padding: 0 !important;
+                margin: 60px 10px 30px 10px !important;
                 size: Letter;
                 @top-right {
                     content: 'launch_code';
@@ -372,7 +370,6 @@ def scrap(index, first, last):
         next_anchor = dom.find("li", {"class": "next"})
         next_anchor = next_anchor.findChild() if next_anchor is not None else None
         url = '' if next_anchor is None else next_anchor.get('href')
-
     print("Finished scrapping document.")
 
 
@@ -494,12 +491,12 @@ def save_java_book(make_audiobook=False):
     index = 'https://education.launchcode.org/java-web-development/index.html'
     first = 'https://education.launchcode.org/java-web-development/chapters/introduction-and-setup/index.html'
     last = 'https://education.launchcode.org/java-web-development/chapters/auth/index.html'
-    #scrap(index, first, last)
+    scrap(index, first, last)
 
     print('\n\nJava Assignments')
     first = 'https://education.launchcode.org/java-web-development/assignments/hello-world.html'
     last = 'https://education.launchcode.org/java-web-development/assignments/tech-jobs-persistent.html'
-    #scrap(index, first, last)
+    scrap(index, first, last)
 
     print('\n\nJava Appendices')
     first = 'https://education.launchcode.org/java-web-development/appendices/about-this-book.html'
@@ -510,8 +507,8 @@ def save_java_book(make_audiobook=False):
     clean_content()
     # save_as_html(full_content, title)
     save_as_pdf(full_content, title)
-    if make_audiobook:
-        create_audio_book(title)
+    #if make_audiobook:
+    #    create_audio_book(title)
 
 
 def truncate(n, decimals=0):
@@ -520,7 +517,7 @@ def truncate(n, decimals=0):
 
 
 def seconds_to_time(seconds):
-    milliseconds = truncate(seconds - int(seconds), 3) * 1000
+    milliseconds = int(truncate(seconds - int(seconds), 3) * 1000)
     minutes = int(seconds / 60)
     hours = int(minutes / 60)
     minutes = minutes % 60
@@ -529,7 +526,7 @@ def seconds_to_time(seconds):
 
 
 def main():
-    #save_intro_book(make_audiobook=True)
+    save_intro_book(make_audiobook=True)
     save_java_book(make_audiobook=True)
     print('Enjoy!')
 
