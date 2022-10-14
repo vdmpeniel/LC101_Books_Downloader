@@ -3,6 +3,9 @@ import requests
 import time
 from bs4 import BeautifulSoup
 import base64
+import PyPDF2
+import pyttsx3
+from gtts import gTTS
 
 import os
 
@@ -86,7 +89,7 @@ def get_css():
             
             .container { 
                 margin: 50px auto 40px auto; 
-                width: 600px; 
+                width: 100%; 
                 text-align: center; 
             }    
             a { color: #4183c4; text-decoration: none; }
@@ -119,7 +122,7 @@ def get_css():
                 margin: 20px 0; 
                 line-height: 1.6; 
                 font-size: 1em; 
-                color: #909090;
+                color: #606060;
             }
             
             ul { 
@@ -179,7 +182,7 @@ def get_css():
             
             @page {
                 padding: 0px 0px !important;
-                margin: 50px 10px 20px 10px !important;
+                margin: 50px 20px 20px 20px !important;
                 size: Letter;
                 @top-right {
                     content: 'launch_code';
@@ -373,6 +376,75 @@ def scrap(index, first, last):
     print("Finished scrapping document.")
 
 
+def test_all_voices(engine):
+    voices = engine.getProperty('voices')
+    for voice in voices:
+        engine.setProperty('voice', voice.id)
+        engine.say('Amazing grace, how sweet the sound that saved a wretch like me...')
+        engine.runAndWait()
+
+
+def google_text_to_speach(text, title):
+    print(f'Creating audio book from pdf.')
+    tts = gTTS(text=text, lang='en')
+    tts.save(f'downloads/{title}.mp3')
+    print(f'Done.')
+
+
+def python_text_to_speach(title):
+    if not os.path.exists(f'downloads/{title}.pdf'):
+        print(f'Document downloads/{title}.pdf not found.')
+        return
+
+    print(f'Creating audio book from pdf.')
+    engine = pyttsx3.init(driverName='sapi5')
+    engine.setProperty('rate', 180)
+    voices = engine.getProperty('voices')
+    engine.setProperty('voice', voices[1].id)
+
+    print(f'Loading pdf file {title}.pdf ...')
+    pdf_reader = PyPDF2.PdfFileReader(open(f'downloads/{title}.pdf', 'rb'))
+    text = ''
+    total_pages = pdf_reader.numPages
+
+    chunk_size = 100
+    chunks = int(total_pages / chunk_size)
+    chunks = chunks if chunks % 100 == 0 else chunks + 1
+    for chunk in range(chunks):
+        text = ''
+        start_page = chunk * chunk_size
+        end_page = (chunk + 1) * chunk_size
+        end_page = end_page if end_page < total_pages else total_pages
+        print(f'Processing pages {start_page} - {end_page}...')
+        for page_num in range(start_page, end_page):
+            if page_num > total_pages: break
+            text += (pdf_reader.getPage(page_num).extractText())
+
+            percentage = int(100 * page_num / total_pages)
+            arrow = '=' * percentage + '>'
+            blank_space = ' ' * (100 - len(arrow))
+            print(f'Loading... {arrow}{blank_space} [{percentage}%]', end='\r')
+        print(f'Done Loading.')
+
+        modified_title = title.replace(' ', '_')
+        print(f'Saving audio book {modified_title}_{chunk}.mp3 ...')
+        create_folder(f'downloads/{modified_title}')
+        engine.save_to_file(text, f'downloads/{modified_title}/{modified_title}_{chunk}.mp3')
+        engine.runAndWait()
+        print(f'Done Saving audiobook part {chunk}.')
+    engine.stop()
+
+
+def create_folder(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+
+def create_audio_book(title):
+    time.sleep(1)
+    python_text_to_speach(title)
+
+
 def init():
     global is_first_time
     global url_path
@@ -380,7 +452,7 @@ def init():
     url_path = ''
 
 
-def save_intro_book():
+def save_intro_book(make_audiobook=False):
     global full_content
     init()
     
@@ -405,11 +477,13 @@ def save_intro_book():
 
     full_content += get_footer()
     clean_content()
-    save_as_html(full_content, title)
+    #save_as_html(full_content, title)
     save_as_pdf(full_content, title)
+    if make_audiobook:
+        create_audio_book(title)
 
 
-def save_java_book():
+def save_java_book(make_audiobook=False):
     global full_content
     init()
 
@@ -420,12 +494,12 @@ def save_java_book():
     index = 'https://education.launchcode.org/java-web-development/index.html'
     first = 'https://education.launchcode.org/java-web-development/chapters/introduction-and-setup/index.html'
     last = 'https://education.launchcode.org/java-web-development/chapters/auth/index.html'
-    scrap(index, first, last)
+    #scrap(index, first, last)
 
     print('\n\nJava Assignments')
     first = 'https://education.launchcode.org/java-web-development/assignments/hello-world.html'
     last = 'https://education.launchcode.org/java-web-development/assignments/tech-jobs-persistent.html'
-    scrap(index, first, last)
+    #scrap(index, first, last)
 
     print('\n\nJava Appendices')
     first = 'https://education.launchcode.org/java-web-development/appendices/about-this-book.html'
@@ -434,17 +508,33 @@ def save_java_book():
 
     full_content += get_footer()
     clean_content()
-    save_as_html(full_content, title)
+    # save_as_html(full_content, title)
     save_as_pdf(full_content, title)
+    if make_audiobook:
+        create_audio_book(title)
+
+
+def truncate(n, decimals=0):
+    multiplier = 10 ** decimals
+    return int(n * multiplier) / multiplier
+
+
+def seconds_to_time(seconds):
+    milliseconds = truncate(seconds - int(seconds), 3) * 1000
+    minutes = int(seconds / 60)
+    hours = int(minutes / 60)
+    minutes = minutes % 60
+    seconds = int(seconds % 60)
+    return f'{str(hours).zfill(2)}h:{str(minutes).zfill(2)}mm:{str(seconds).zfill(2)}secs:{str(milliseconds).zfill(3)}millis'
 
 
 def main():
-    save_intro_book()
-    save_java_book()
+    #save_intro_book(make_audiobook=True)
+    save_java_book(make_audiobook=True)
     print('Enjoy!')
 
 
 if __name__ == '__main__':
     start_time = time.time()
     main()
-    print("--- Execution time: %s seconds ---" % (time.time() - start_time))
+    print("--- Execution time: %s ---" % (seconds_to_time(time.time() - start_time)))
