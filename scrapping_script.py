@@ -507,8 +507,8 @@ def save_java_book(make_audiobook=False):
     clean_content()
     # save_as_html(full_content, title)
     save_as_pdf(full_content, title)
-    #if make_audiobook:
-    #    create_audio_book(title)
+    if make_audiobook:
+        create_audio_book(title)
 
 
 def truncate(n, decimals=0):
